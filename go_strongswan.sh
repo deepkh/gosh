@@ -25,7 +25,21 @@ _go_strongswan_ipsec_secrets_gen() {
   local EAP_PASSWORD="${5}"
 
   sudo bash -c "cat > /etc/ipsec.secrets << EOF1
-${CA_CN} : RSA \"${CA_KEY}\" \"${CA_PASSWORD}\"
+${CA_CN} : RSA \"${CA_KEY}\"  \"${CA_PASSWORD}\"
+${EAP_USERNAME} : EAP \"${EAP_PASSWORD}\"
+EOF1"
+}
+
+# Setting /etc/ipsec.secrets
+_go_strongswan_ipsec_secrets_gen_without_password() {
+  local CA_CN="${1}"
+  local CA_KEY="${2}"
+  local CA_PASSWORD="${3}"
+  local EAP_USERNAME="${4}"
+  local EAP_PASSWORD="${5}"
+
+  sudo bash -c "cat > /etc/ipsec.secrets << EOF1
+${CA_CN} : RSA \"${CA_KEY}\"
 ${EAP_USERNAME} : EAP \"${EAP_PASSWORD}\"
 EOF1"
 }
