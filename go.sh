@@ -84,22 +84,18 @@ _go_info_infinite() {
 }
 
 _go_conf_home_backup() {
-  if [ ! -n "${GO_CONF_HOME_BACKUP_LIST}" ];then
-    exit 1
-  fi
-
-  echo $GO_CONF_HOME_BACKUP_LIST
-
+  source ~/.gosh/.go_pre.sh _alias
   USER=`whoami`
-  GO_CONF_HOME_LOCAL_DIR=/home/`whoami`
   GO_CONF_HOME_TARGET_DIR=${GO_CONF_DIR}/home/`whoami`
 
   if [ ! -d "${GO_CONF_HOME_TARGET_DIR}" ];then
     sudo mkdir -p ${GO_CONF_HOME_TARGET_DIR}
     sudo chown ${USER}.${USER}
   fi
-  
-  sudo rsync -aryuv ${GO_CONF_HOME_BACKUP_LIST} ${GO_CONF_HOME_TARGET_DIR}
+
+  for i in "${!GO_CONF_HOME_BACKUP_LIST[@]}"; do
+    sudo rsync -aryuv ~/${GO_CONF_HOME_BACKUP_LIST[i]} ${GO_CONF_HOME_TARGET_DIR}
+  done
 }
 
 _go_conf_etc_backup() {
@@ -126,8 +122,8 @@ _go_iptables_apply() {
 }
 
 _alias() {
-  if [ -f ~/.go_pre.sh ]; then
-    source ~/.go_pre.sh _alias
+  if [ -f ~/.gosh/.go_pre.sh ]; then
+    source ~/.gosh/.go_pre.sh _alias
   fi
 
   alias gosh="cd ${GOSH_PATH}"
@@ -156,8 +152,8 @@ _alias() {
   source $GOSH_PATH/go_strongswan.sh _alias
   source $GOSH_PATH/go_cert.sh _alias
 
-  if [ -f ~/.go_post.sh ]; then
-    source ~/.go_post.sh _alias
+  if [ -f ~/.gosh/.go_post.sh ]; then
+    source ~/.gosh/.go_post.sh _alias
   fi
 }
 
