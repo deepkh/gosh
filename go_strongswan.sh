@@ -4,12 +4,12 @@
 
 export GO_STRONGSWAN_FILE_PATH=${GOSH_PATH}/go_strongswan.sh
 
-_go_strongswan_packages_install() {
+_strongswan_packages_install() {
   sudo apt-get install strongswan strongswan-swanctl strongswan-pki iptables-persistent libstrongswan-extra-plugins libstrongswan-standard-plugins libcharon-extra-plugins resolvconf --no-install-recommends
 }
 
 # Install StrongSwan Server's X509 Certificate to /etc/ipsec.d/private/ and /etc/ipsec.d/certs/ 
-_go_strongswan_ca_install() {
+_strongswan_ca_install() {
   local CA_KEY="${1}"
   local CA_CRT="${2}"
   sudo cp ${CA_KEY} /etc/ipsec.d/private
@@ -17,7 +17,7 @@ _go_strongswan_ca_install() {
 }
 
 # Setting /etc/ipsec.secrets
-_go_strongswan_ipsec_secrets_gen() {
+_strongswan_ipsec_secrets_gen() {
   local CA_CN="${1}"
   local CA_KEY="${2}"
   local CA_PASSWORD="${3}"
@@ -31,7 +31,7 @@ EOF1"
 }
 
 # Setting /etc/ipsec.secrets
-_go_strongswan_ipsec_secrets_gen_without_password() {
+_strongswan_ipsec_secrets_gen_without_password() {
   local CA_CN="${1}"
   local CA_KEY="${2}"
   local CA_PASSWORD="${3}"
@@ -45,7 +45,7 @@ EOF1"
 }
 
 # Setting /etc/ipsec.conf
-_go_strongswan_ipsec_conf() {
+_strongswan_ipsec_conf() {
   local SERVER_CN="${1}"
   local SERVER_CRT="${2}"
 
@@ -84,7 +84,7 @@ conn ikev2-vpn
 EOF2"
 }
 
-_go_strongswan_strongswan_conf() {
+_strongswan_strongswan_conf() {
   sudo bash -c "cat > /etc/strongswan.conf << EOF3
 charon {
     #duplicheck.enable = no
@@ -102,30 +102,30 @@ include strongswan.d/*.conf
 EOF3"
 }
 
-_go_strongswan_restart() {
+_strongswan_restart() {
   set +e
   sudo systemctl enable strongswan-starter
   sudo systemctl restart strongswan-starter
   sudo ipsec restart
   sleep 1
-  _go_strongswan_status
+  _strongswan_status
 }
 
-_go_strongswan_status() {
+_strongswan_status() {
   sudo ipsec statusall
 }
 
-_go_strongswan_log() {
+_strongswan_log() {
   sudo cat /var/log/syslog
 }
 
 _alias() {
-  alias go_strongswan_packages_install="$GO_STRONGSWAN_FILE_PATH _go_strongswan_packages_install"
-  alias go_strongswan_restart="$GO_STRONGSWAN_FILE_PATH _go_strongswan_restart"
-  alias go_strongswan_status="$GO_STRONGSWAN_FILE_PATH _go_strongswan_status"
-  alias go_strongswan_log="$GO_STRONGSWAN_FILE_PATH _go_strongswan_log"
+  alias strongswan_packages_install="$GO_STRONGSWAN_FILE_PATH _strongswan_packages_install"
+  alias strongswan_restart="$GO_STRONGSWAN_FILE_PATH _strongswan_restart"
+  alias strongswan_status="$GO_STRONGSWAN_FILE_PATH _strongswan_status"
+  alias strongswan_log="$GO_STRONGSWAN_FILE_PATH _strongswan_log"
   
-  alias go_strongswan_strongswan_conf="$GO_POST_FILE_PATH _go_strongswan_strongswan_conf"
+  alias strongswan_strongswan_conf="$GO_POST_FILE_PATH _strongswan_strongswan_conf"
 }
 
 $@

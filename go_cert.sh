@@ -15,7 +15,7 @@
 export GO_CERT_FILE_PATH=${GOSH_PATH}/go_cert.sh
 
 # Generate RootCA's X509 Certificate
-_go_cert_rootca_gen() {
+_cert_rootca_gen() {
   local PREFIX="$1"
   local PASSWORD="$2"
   local CN="$3"
@@ -26,7 +26,7 @@ _go_cert_rootca_gen() {
 }
 
 # Generate StrongSwan Server's X509 Certificate
-_go_cert_serverca_gen() {
+_cert_serverca_gen() {
   local PREFIX="$1"
   local PASSWORD="$2"
   local CN="$3"
@@ -42,7 +42,7 @@ _go_cert_serverca_gen() {
 }
 
 # Generate StrongSwan Server's X509 Certificate
-_go_cert_serverca_gen_without_password() {
+_cert_serverca_gen_without_password() {
   local PREFIX="$1"
   local PASSWORD="$2"
   local CN="$3"
@@ -69,8 +69,8 @@ _clientca_gen() {
 }
 
 _alias() {
-  alias go_cert_rootca_gen="$GO_CERT_FILE_PATH _go_cert_rootca_gen"
-  alias go_cert_serverca_gen="$GO_CERT_FILE_PATH _go_cert_serverca_gen"
+  alias cert_rootca_gen="$GO_CERT_FILE_PATH _cert_rootca_gen"
+  alias cert_serverca_gen="$GO_CERT_FILE_PATH _cert_serverca_gen"
 }
 
 $@
