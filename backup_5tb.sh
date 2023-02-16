@@ -21,8 +21,8 @@ echo !!!!!!!!!!!!!!!! Enter or Ctrl+C !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 echo ******************************************************************************************
 read
 
-# sdb is 5TB
-sdb=sdb
+# sda is 5TB
+sdb=sda
 sdbs=(${sdb}2 ${sdb}3 ${sdb}4 ${sdb}5)
 sdbs_size=(149999845376 149999845376 511705088 4684469239808)
 sdbs_src=("/*" "/home/*" "/boot/efi/*" "/opt/*")
@@ -33,7 +33,7 @@ sdbs_exclude=("--exclude=/dev/* --exclude=/home/* --exclude=/proc/* --exclude=/r
       "" 
       "--exclude=/workspace/aosp_8.1.0_r33/ --exclude=/legacy/ --exclude=/media/Download/")
 
-function _backup() {
+_backup() {
   local i=0
   for i in "${!sdbs[@]}"; do
     local size="`blockdev --getsize64 /dev/${sdbs[${i}]}`"
@@ -57,7 +57,7 @@ function _backup() {
   done
 }
 
-function _umount() {
+_umount() {
   local i=0
   for i in "${!sdbs[@]}"; do
     echo ${i} umount ${sdbs_dst[${i}]}

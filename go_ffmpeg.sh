@@ -15,10 +15,16 @@
 
 export GO_FF_FILE_PATH=${GOSH_PATH}/go_ffmpeg.sh
 
+_remove_html_tag() {
+  sed -e 's/<[^>]*>//g' "${1}" > /tmp/t1
+  cp /tmp/t1 "${1}"
+}
+
 _extract_srt() {
   strlen=${#1}
   srtname=${1:0:$strlen-4}.srt
   ffmpeg -i "$1" -map 0:$2 "$srtname"
+  _remove_html_tag "$srtname"
 }
 
 _extract_srts() {
@@ -29,11 +35,10 @@ _extract_srts() {
       _extract_srt "$file" $2
     fi
   done
-
 }
 
 _show_srts() {
-  ffprobe -loglevel error -select_streams s -show_entries stream=index:stream_tags=language -of csv=p=0 $@
+  ffprobe -loglevel error -select_streams s -show_entries stream=index:stream_tags=language -of csv=p=0 "$1"
 }
 
 _two_pass_enc_with_srt() {
@@ -55,7 +60,6 @@ _enc_with_srt() {
 
 _rtmp_push_to_fb() {
   ffmpeg -c:v h264 -i $1 -f alsa -i hw:0,0 -ar 48000 -c:v copy -c:a aac -b:a 128k  -f flv -y "rtmps://live-api-s.facebook.com:443/rtmp/2369171593095174?s_bl=1&s_ps=1&s_sw=0&s_vt=api-s&a=AbxEB3kakGyfNW2f"
-  
 }
 
 _alias() {
