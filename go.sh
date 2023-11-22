@@ -94,7 +94,8 @@ _go_conf_home_backup() {
   fi
 
   for i in "${!GO_CONF_HOME_BACKUP_LIST[@]}"; do
-    sudo rsync -aryuv ~/${GO_CONF_HOME_BACKUP_LIST[i]} ${GO_CONF_HOME_TARGET_DIR}
+    #sudo rsync -aryuv ~/${GO_CONF_HOME_BACKUP_LIST[i]} ${GO_CONF_HOME_TARGET_DIR}
+    rsync -aryuv ~/${GO_CONF_HOME_BACKUP_LIST[i]} ${GO_CONF_HOME_TARGET_DIR}
   done
 }
 

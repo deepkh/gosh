@@ -18,7 +18,7 @@ BOOTSTRAP_FILE_PATH=${GOSH_PATH}/go_bootstrap.sh
 #BOOTSTRAP_DEFAULT_USER=
 #BOOTSTRAP_DEFAULT_PASSWD=
 DEFAULT_BIND="--bind /root --bind /home/${BOOTSTRAP_DEFAULT_USER} --bind /opt --bind /etc/resolv.conf"
-DEFAULT_PKGS="cmake gdb nload tmux vim sudo wget curl ca-certificates xz-utils net-tools gperf help2man nfs-common nfs-kernel-server portmap cifs-utils avahi-daemon samba build-essential fakeroot automake flex texinfo autoconf bison gawk libtool libtool-bin libncurses5-dev git yasm unzip zip"
+DEFAULT_PKGS="software-properties-common cmake gdb nload tmux vim sudo wget curl ca-certificates xz-utils net-tools gperf help2man nfs-common nfs-kernel-server portmap cifs-utils avahi-daemon samba build-essential fakeroot automake flex texinfo autoconf bison gawk libtool libtool-bin libncurses5-dev git yasm unzip zip"
 PKG_SDL2_DEV="libsdl2-dev libsdl2-gfx-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-net-dev libsdl2-ttf-dev libcurl4-openssl-dev libjansson-dev libyaml-dev"
 PKG_SDL2="libsdl2-2.0 libsdl2-gfx-1.0 libsdl2-image-2.0 libsdl2-mixer-2.0 libsdl2-net-2.0 libsdl2-ttf-2.0 libcurl4 libjansson4 libyaml-0-2"
 #MINGW32_GCC_PKGS="gcc-mingw-w64-i686 g++-mingw-w64-i686"
@@ -219,12 +219,80 @@ _bootstrap() {
   sudo ln -sf ${GO_ROOTFS_PATH}/${4} /var/lib/machines
 }
 
+
+# Ubuntu 23.10 Mantic
+# the init function are not working anymore on ubuntu 23.04
+# due to the behavior of systemd-nspawn seems changed since ubuntu 23.04
+# use manually commands to instead 
+_bootstrap_mantic_amd64() {
+  #$1=amd64
+  #$2=jessie
+  #$3=remote server
+  #$4=relatively_rootfs_dir
+
+  A=amd64
+  B=mantic
+  C=http://tw.archive.ubuntu.com/ubuntu
+  D=${B}-${A}
+
+  if [ "${D}" = "" ];then
+    echo '${D}' cant empty!
+    #return 0
+    #exit;
+  fi
+
+  if [ -d "${GO_ROOTFS_PATH}/${D}" ];then
+    echo ${GO_ROOTFS_PATH}/${D} already exists!
+    #return 0
+    #exit;
+  fi
+
+  sudo debootstrap --include=systemd,dbus --verbose --arch ${A} ${B} ${GO_ROOTFS_PATH}/${D} ${C}
+  sudo rm -rf /var/lib/machines/${D}
+  sudo ln -sf ${GO_ROOTFS_PATH}/${D} /var/lib/machines
+}
+
+
+# debian 12
+# the init function are not working anymore on ubuntu 23.04
+# due to the behavior of systemd-nspawn seems changed since ubuntu 23.04
+# use manually commands to instead 
+_bootstrap_bookworm_amd64() {
+  #$1=amd64
+  #$2=jessie
+  #$3=remote server
+  #$4=relatively_rootfs_dir
+
+  A=amd64
+  B=bookworm
+  C=http://ftp.tw.debian.org/debian
+  D=${B}-${A}
+
+  if [ "${D}" = "" ];then
+    echo '${D}' cant empty!
+    #return 0
+    #exit;
+  fi
+
+  if [ -d "${GO_ROOTFS_PATH}/${D}" ];then
+    echo ${GO_ROOTFS_PATH}/${D} already exists!
+    #return 0
+    #exit;
+  fi
+
+  sudo debootstrap --include=systemd,dbus --verbose --arch ${A} ${B} ${GO_ROOTFS_PATH}/${D} ${C}
+  sudo rm -rf /var/lib/machines/${D}
+  sudo ln -sf ${GO_ROOTFS_PATH}/${D} /var/lib/machines
+}
+
+# debian 8
 _bootstrap_jessie_amd64() {
   PATCH_MF="1"
   _bootstrap amd64 jessie "http://ftp.tw.debian.org/debian" $@ 
   _bootstrap_init_debian ${1}
 }
 
+# debian 9
 _bootstrap_stretch_amd64() {
   _bootstrap amd64 stretch "http://ftp.tw.debian.org/debian" $@
   _bootstrap_init_debian ${1}
@@ -245,8 +313,43 @@ _bootstrap_xenial_amd64() {
 _bootstrap_boot() {
   #sudo systemd-nspawn -M ${1} ${DEFAULT_BIND} -bD ${GO_ROOTFS_PATH}/${1}
   # there have program of "Invalid machine name: cosmic_x64" when flag with "-M cosmic_x64" on ubuntu 20.04
-  sudo systemd-nspawn ${DEFAULT_BIND} -bD ${GO_ROOTFS_PATH}/${1}
+  sudo systemd-nspawn ${DEFAULT_BIND} -bD ${GO_ROOTFS_PATH}/${1} 
 }
+
+#
+# behavior changed, since ubuntu 23.04
+# https://wiki.debian.org/nspawn
+# https://serverfault.com/questions/995562/bind-mount-with-systemd-nspawn
+# 
+_bootstrap_edit() {
+
+  DEFAULT_SERVICE_FILE=/lib/systemd/system/systemd-nspawn@.service
+  SERVICE_FILE=/etc/systemd/system/systemd-nspawn@${1}.service
+
+  if [ -f "${SERVICE_FILE}" ];then
+    echo ${SERVICE_FILE} already exists!
+  else
+    sudo cp ${DEFAULT_SERVICE_FILE} ${SERVICE_FILE}
+  fi
+
+  # use the following line to instead ExecStart
+  # ExecStart=systemd-nspawn --quiet --keep-unit --boot --link-journal=try-guest -U --settings=override --machine=%i --bind /opt:/opt --bind /home --bind /root --private-users=off
+  sudo vim.tiny ${SERVICE_FILE}
+  sudo systemctl daemon-reload
+  
+  #Boot when OS startup. It's depend on situation.
+  #sudo systemctl enable systemd-nspawn@${1}.service
+}
+
+_bootstrap_start() {
+  sudo systemctl start systemd-nspawn@${1}
+}
+
+_bootstrap_stop() {
+  sudo systemctl stop systemd-nspawn@${1}
+}
+
+
 
 _bootstrap_mount() {
   sudo systemd-nspawn -bD ${GO_ROOTFS_PATH}/${1}
@@ -303,6 +406,8 @@ _bootstrap_chroot() {
 }
 
 _alias() {
+  alias bootstrap_mantic_amd64="source $BOOTSTRAP_FILE_PATH _bootstrap_mantic_amd64"
+  alias bootstrap_bookworm_amd64="source $BOOTSTRAP_FILE_PATH _bootstrap_bookworm_amd64"
   alias bootstrap_jessie_amd64="source $BOOTSTRAP_FILE_PATH _bootstrap_jessie_amd64"
   alias bootstrap_stretch_amd64="source $BOOTSTRAP_FILE_PATH _bootstrap_stretch_amd64"
   alias bootstrap_cosmic_amd64="source $BOOTSTRAP_FILE_PATH _bootstrap_cosmic_amd64"
@@ -315,6 +420,18 @@ _alias() {
   alias bootstrap_chroot_mnt="source $BOOTSTRAP_FILE_PATH _bootstrap_chroot_mnt"
   alias bootstrap_chroot_umnt="source $BOOTSTRAP_FILE_PATH _bootstrap_chroot_umnt"
   alias bootstrap_chroot="source $BOOTSTRAP_FILE_PATH _bootstrap_chroot"
+  
+  alias mantic_edit="source $BOOTSTRAP_FILE_PATH _bootstrap_edit mantic-amd64"
+  alias mantic_start="source $BOOTSTRAP_FILE_PATH _bootstrap_start mantic-amd64"
+  alias mantic_stop="source $BOOTSTRAP_FILE_PATH _bootstrap_stop mantic-amd64"
+  alias mantic_chroot="source $BOOTSTRAP_FILE_PATH _bootstrap_chroot mantic-amd64"
+  alias mantic_login="source $BOOTSTRAP_FILE_PATH _bootstrap_login mantic-amd64"
+  
+  alias bookworm_edit="source $BOOTSTRAP_FILE_PATH _bootstrap_edit bookworm-amd64"
+  alias bookworm_start="source $BOOTSTRAP_FILE_PATH _bootstrap_start bookworm-amd64"
+  alias bookworm_stop="source $BOOTSTRAP_FILE_PATH _bootstrap_stop bookworm-amd64"
+  alias bookworm_chroot="source $BOOTSTRAP_FILE_PATH _bootstrap_chroot bookworm-amd64"
+  alias bookworm_login="source $BOOTSTRAP_FILE_PATH _bootstrap_login bookworm-amd64"
   
   alias stretch_boot="source $BOOTSTRAP_FILE_PATH _bootstrap_boot stretch"
   alias stretch_chroot="source $BOOTSTRAP_FILE_PATH _bootstrap_chroot stretch"
